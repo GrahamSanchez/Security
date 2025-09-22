@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sistema de Registro</title>
+  <style>
+    body{
+      font-family:Inter, system-ui, sans-serif; margin:0; 
+      background:url('https://lh3.googleusercontent.com/gps-cs-s/AC9h4npfmx6H287aGbZuqIZYcw-jpFdx0tcr5liOTZ_NeIPSltwJk57-WkxNRQbXcq3eeIdxRR1s2nvzzWYP4Zt8NrFvGUtx1mD-aayYUzk7ds210_eabmc7OjL4Fs1UzeGrLnBmKh0x=s1360-w1360-h1020-rw') no-repeat center center fixed;
+      background-size:cover;
+      color:#f1f5f9;
+    }
+    .container{max-width:800px;margin:28px auto;padding:20px}
+    .card{background:rgba(76,0,34,0.85);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,0.3);color:#f1f5f9}
+    .btn{background:#800020;color:white;padding:10px;border-radius:10px;border:none;cursor:pointer}
+    .secondary{background:#e6eef8;color:#0f172a}
+    .item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.1)}
+    .item:hover{background:rgba(255,255,255,0.2)}
+    .thumb{width:56px;height:56px;border-radius:8px;object-fit:cover;background:#eef2ff}
+    .meta{font-size:13px}
+    .meta b{display:block}
+    a{color:#fbb6ce}
+  </style>
+</head>
+<body>
+  <div class="container" id="main"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    const LS_KEY = 'reg_profiles_v1';
+    function loadProfiles(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'[]') }catch(e){ return [] } }
+    function saveProfiles(data){ localStorage.setItem(LS_KEY, JSON.stringify(data)); }
+    function uid(prefix='id'){ return prefix+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+    function readFileAsDataURL(file){ return new Promise(res=>{ if(!file) return res(null); const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(file); }); }
+
+    function route(){
+      const hash = location.hash.replace('#','')||'home';
+      const container=document.getElementById('main');
+      container.innerHTML='';
+      if(hash==='student') renderStudentForm(container);
+      else if(hash==='teacher') renderTeacherForm(container);
+      else if(hash==='profiles') renderProfiles(container);
+      else renderHome(container);
+    }
+
+    function renderHome(c){
+      c.innerHTML=`<div class='card'>
+        <h2>Menú principal</h2>
+        <p><a href='#student'>Registrar Alumno</a></p>
+        <p><a href='#teacher'>Registrar Profesor</a></p>
+        <p><a href='#profiles'>Ver Perfiles</a></p>
+      </div>`;
+    }
+
+    function renderStudentForm(c){
+      c.innerHTML=`<div class='card'>
+        <h2>Registrar Alumno</h2>
+        <form id='formStudent'>
+          <input type='text' id='stu_name' placeholder='Nombre(s)' required/><br>
+          <input type='text' id='stu_last' placeholder='Apellidos' required/><br>
+          <input type='text' id='stu_mat' placeholder='Matrícula' required/><br>
+          <input type='text' id='stu_career' placeholder='Carrera' required/><br>
+          <select id='stu_shift'><option>Matutino</option><option>Vespertino</option><option>Mixto</option></select><br>
+          <input type='file' id='stu_photo' accept='image/*'/><br><br>
+          <button class='btn' type='submit'>Guardar</button>
+          <a href='#home' class='secondary btn'>Volver</a>
+        </form>
+      </div>`;
+      document.getElementById('formStudent').addEventListener('submit', async e=>{
+        e.preventDefault();
+        const file=document.getElementById('stu_photo').files[0];
+        const photo=await readFileAsDataURL(file);
+        const p={id:uid('stu'), type:'student', name:stu_name.value,last:stu_last.value,mat:stu_mat.value,career:stu_career.value,shift:stu_shift.value,photo};
+        const list=loadProfiles(); list.push(p); saveProfiles(list);
+        alert('Alumno guardado'); location.hash='profiles';
+      });
+    }
+
+    function renderTeacherForm(c){
+      c.innerHTML=`<div class='card'>
+        <h2>Registrar Profesor</h2>
+        <form id='formTeacher'>
+          <input type='text' id='t_name' placeholder='Nombre(s)' required/><br>
+          <input type='text' id='t_last' placeholder='Apellidos' required/><br>
+          <input type='text' id='t_specialty' placeholder='Especialidad' required/><br>
+          <input type='text' id='t_key' placeholder='Clave de empleado' required/><br>
+          <input type='file' id='t_photo' accept='image/*'/><br><br>
+          <button class='btn' type='submit'>Guardar</button>
+          <a href='#home' class='secondary btn'>Volver</a>
+        </form>
+      </div>`;
+      document.getElementById('formTeacher').addEventListener('submit', async e=>{
+        e.preventDefault();
+        const file=document.getElementById('t_photo').files[0];
+        const photo=await readFileAsDataURL(file);
+        const p={id:uid('t'), type:'teacher', name:t_name.value,last:t_last.value,specialty:t_specialty.value,key:t_key.value,photo};
+        const list=loadProfiles(); list.push(p); saveProfiles(list);
+        alert('Profesor guardado'); location.hash='profiles';
+      });
+    }
+
+    function renderProfiles(c){
+      const list=loadProfiles();
+      c.innerHTML=`<div class='card'>
+        <h2>Perfiles</h2>
+        <div id='list'></div>
+        <a href='#home' class='secondary btn'>Volver</a>
+      </div>
+      <div class='card' style='margin-top:12px'>
+        <h2>Vista Perfil</h2>
+        <div id='profileInfo'>Seleccione un perfil...</div>
+        <div id='qrcode'></div>
+        <button class='btn' id='deleteBtn'>Eliminar Perfil</button>
+      </div>`;
+      const listEl=document.getElementById('list');
+      list.forEach(p=>{
+        const it=document.createElement('div'); it.className='item';
+        it.innerHTML=`<img class='thumb' src='${p.photo||''}' alt=''><div class='meta'><b>${p.name} ${p.last}</b></div>`;
+        it.onclick=()=>showProfile(p);
+        listEl.appendChild(it);
+      });
+      document.getElementById('deleteBtn').onclick=()=>{
+        if(!window.currentProfile) return alert('Selecciona un perfil');
+        if(confirm('Eliminar perfil?')){
+          const updated=list.filter(x=>x.id!==window.currentProfile.id);
+          saveProfiles(updated); alert('Eliminado'); route();
+        }
+      }
+    }
+
+    function showProfile(p){
+  window.currentProfile=p;
+  const div=document.getElementById('profileInfo');
+  div.innerHTML=p.type==='student'?
+    `<b>${p.name} ${p.last}</b><br>Matrícula: ${p.mat}<br>Carrera: ${p.career}<br>Turno: ${p.shift}`:
+    `<b>${p.name} ${p.last}</b><br>Especialidad: ${p.specialty}<br>Clave: ${p.key}`;
+  const q=document.getElementById('qrcode'); 
+  q.innerHTML='';
+
+  // Guardamos todos los datos en JSON dentro del QR
+  const qrData = JSON.stringify(p);
+  new QRCode(q,{
+    text: location.origin + "/perfil.html?data=" + encodeURIComponent(qrData),
+    width:128,
+    height:128
+  });
+}
+
+    window.addEventListener('hashchange',route);
+    route();
+  </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Perfil</title>
+  <style>
+    body{
+      font-family:Inter, system-ui, sans-serif; margin:0;
+      background:#f5f5f5; color:#333;
+    }
+    .container{max-width:800px;margin:30px auto;padding:20px;background:white;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.2)}
+    .profile{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+    img{max-width:200px;border-radius:12px;object-fit:cover}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Perfil</h2>
+    <div id="profile" class="profile"></div>
+  </div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const data = params.get("data");
+
+  let profile = null;
+  try {
+    profile = JSON.parse(decodeURIComponent(data));
+  } catch (e) {
+    profile = null;
+  }
+
+  const div=document.getElementById("profile");
+  if(profile){
+    div.innerHTML=`
+      <div>
+        <b>${profile.name} ${profile.last}</b><br>
+        ${profile.type==='student' ? `
+          Matrícula: ${profile.mat}<br>
+          Carrera: ${profile.career}<br>
+          Turno: ${profile.shift}
+        `:`
+          Especialidad: ${profile.specialty}<br>
+          Clave: ${profile.key}
+        `}
+      </div>
+      <img src="${profile.photo||''}" alt="Foto">`;
+  }else{
+    div.innerHTML="<p>No se encontraron datos en el QR</p>";
+  }
+</script>
+
+</body>
+</html>
